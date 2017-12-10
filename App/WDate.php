@@ -35,6 +35,62 @@ class WDate
      */
     private $second;
 
+
+    public function __construct($date, $format = 'HH:II:SS DD.MM.YYYY')
+    {
+        $this->parse($date, $format);
+    }
+
+    /**
+     * Парсинг даты
+     * @param $date - дата
+     * @param string $format - формат
+     * @return $this
+     */
+    public function parse($date, $format = 'HH:II:SS DD.MM.YYYY')
+    {
+        $format = str_split(strtoupper($format));
+        $this->hour = $this->parseValue('H', $date, $format);
+        $this->minute = $this->parseValue('I', $date, $format);
+        $this->second = $this->parseValue('S', $date, $format);
+        $this->date = $this->parseValue('D', $date, $format);
+        $this->month = $this->parseValue('M', $date, $format);
+        $this->year = $this->parseValue('Y', $date, $format);
+        return $this;
+    }
+
+    /**
+     * @param string $code - код который вытаскиваем. H - час, I - минута, S - секунда, D - день, M - месяц, Y - год
+     * @param string $date - текущая дата
+     * @param array $format формат разбитый на массив
+     * @return null|int
+     */
+    private function parseValue($code, $date, array $format)
+    {
+        $pos = null;
+        $count = null;
+        for ($i = 0, $l = count($format); $i < $l; $i++) {
+            if ($format[$i] === $code) {
+                if (is_null($pos)) {
+                    $pos = $i;
+                }
+                $count++;
+            } else {
+                if (!is_null($pos)) {
+                    break;
+                }
+            }
+        }
+        if (is_null($pos)) {
+            return null;
+        }
+        $result = substr($date, $pos, $count);
+        if ($result === false) {
+            return null;
+        }
+        return (int)$result;
+    }
+
     /**
      * @return int|null
      */
@@ -142,5 +198,56 @@ class WDate
         $this->second = $second;
         return $this;
     }
+
+    /**
+     * Получение полной даты
+     * @return string
+     */
+    public function format()
+    {
+        $result = '';
+        if (!is_null($this->hour)) {
+            $result .= $this->addZero($this->hour);
+            $result .= ':';
+        }
+        if (!is_null($this->minute)) {
+            $result .= $this->addZero($this->minute);
+        }
+        if (!is_null($this->second)) {
+            $result .= ':';
+            $result .= $this->addZero($this->second);
+        }
+        if (!is_null($this->date)) {
+            if (!empty($result)) {
+                $result .= ' ';
+            }
+            $result .= $this->addZero($this->date);
+        }
+        if (!is_null($this->month)) {
+            if (!empty($result)) {
+                $result .= '.';
+            }
+            $result .= $this->addZero($this->month);
+        }
+        if (!is_null($this->year)) {
+            if (!empty($result)) {
+                $result .= '.';
+            }
+            $result .= $this->year;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param string|int $str строка, число которое увеличиваем
+     * @param int $length до какой длинны увеличиваем
+     * @return string
+     */
+    private function addZero($str = '', $length = 2)
+    {
+        return str_pad($str, $length, '0', STR_PAD_LEFT);
+    }
+
 
 }
