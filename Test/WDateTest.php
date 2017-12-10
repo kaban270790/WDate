@@ -8,7 +8,7 @@
 
 class WDateTest extends PHPUnit\Framework\TestCase
 {
-    public function test()
+    public function testInit()
     {
         $arTest = [
             [
@@ -60,6 +60,30 @@ class WDateTest extends PHPUnit\Framework\TestCase
         foreach ($arTest as $item) {
             $date = new \App\WDate($item['date'], $item['formatIn']);
             $this->assertEquals($date->format(), $item['resultDate'], $item['resultDate']);
+        }
+    }
+
+    public function testDiff()
+    {
+
+        $date = new App\WDate('01:01:05 21.07.2017');
+        $arTest = [
+            '01:01:05 21.07.2017' => 0,
+            '01:01:05 21.07.2016' => 1,
+            '01:01:05 20.06.2017' => 1,
+            '01:01:05 20.07.2017' => 1,
+            '01:01:04 21.07.2017' => 1,
+            '00:01:05 21.07.2017' => 1,
+            '01:01:05 21.07.2018' => -1,
+            '01:01:05 21.08.2017' => -1,
+            '01:01:05 22.07.2017' => -1,
+            '01:01:06 21.07.2017' => -1,
+            '01:02:05 21.07.2017' => -1,
+            '02:01:05 21.07.2017' => -1,
+        ];
+        foreach ($arTest as $key => $value) {
+            $diff = new \App\WDate($key);
+            $this->assertEquals($date->diff($diff), $value, $diff->format() . ' ' . $date->format());
         }
     }
 }

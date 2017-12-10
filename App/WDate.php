@@ -249,5 +249,52 @@ class WDate
         return str_pad($str, $length, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Сравниваем текущую дату с поданой
+     * @param \App\WDate $diff
+     * @return int  -1  поданая дата больше текущей
+     *              1   текущая дата больше поданой
+     *              0   даты равны
+     */
+    public function diff(WDate $diff)
+    {
+        $result = $this->diffInt($this->year, $diff->getYear());
+        if ($result !== 0) {
+            return $result;
+        }
+        $result = $this->diffInt($this->month, $diff->getMonth());
+        if ($result !== 0) {
+            return $result;
+        }
+        $result = $this->diffInt($this->date, $diff->getDate());
+        if ($result !== 0) {
+            return $result;
+        }
+        $result = $this->diffInt($this->hour, $diff->getHour());
+        if ($result !== 0) {
+            return $result;
+        }
+        $result = $this->diffInt($this->minute, $diff->getMinute());
+        if ($result !== 0) {
+            return $result;
+        }
+        $result = $this->diffInt($this->second, $diff->getSecond());
+        return $result;
+    }
 
+    /**
+     * Сравнение чисел для сравнения даты
+     * @param int|null $current
+     * @param int|null $diff
+     * @return int
+     */
+    private function diffInt($current, $diff)
+    {
+        if (!is_null($current) && !is_null($diff)) {
+            if ($current != $diff) {
+                return $current > $diff ? 1 : -1;
+            }
+        }
+        return 0;
+    }
 }
