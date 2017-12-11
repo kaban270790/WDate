@@ -13,7 +13,7 @@ class WDate
     /**
      * @var int|null число даты от начала месяца
      */
-    private $date;
+    private $day;
     /**
      * @var int|null число месяца от начала года
      */
@@ -36,26 +36,95 @@ class WDate
     private $second;
 
 
-    public function __construct($date, $format = 'HH:II:SS DD.MM.YYYY')
+    public function __construct($date)
     {
-        $this->parse($date, $format);
+        $this->parse($date);
     }
 
     /**
      * Парсинг даты
      * @param $date - дата
-     * @param string $format - формат
      * @return $this
      */
-    public function parse($date, $format = 'HH:II:SS DD.MM.YYYY')
+    public function parse($date)
     {
-        $format = str_split(strtoupper($format));
-        $this->hour = $this->parseValue('H', $date, $format);
-        $this->minute = $this->parseValue('I', $date, $format);
-        $this->second = $this->parseValue('S', $date, $format);
-        $this->date = $this->parseValue('D', $date, $format);
-        $this->month = $this->parseValue('M', $date, $format);
-        $this->year = $this->parseValue('Y', $date, $format);
+        $posPoint = strpos($date, '.');
+        $posColon = strpos($date, ':');
+        if ($posPoint !== false && $posColon !== false) {
+            $date = explode(' ', $date);
+            if ($posPoint > $posColon) {
+                $this->parseTime($date[0])->parseDate($date[1]);
+            } else {
+                $this->parseTime($date[1])->parseDate($date[0]);
+            }
+        } elseif ($posColon !== false) {
+            $this->parseTime($date);
+        } else {
+            $this->parseDate($date);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Парсинг времени
+     * @param string $time строка со временем
+     * @return $this
+     */
+    private function parseTime($time)
+    {
+        $time = explode(':', $time);
+        if (!empty($time[0])) {
+            $this->hour = (int)$time[0];
+        }
+        if (!empty($time[1])) {
+            $this->minute = (int)$time[1];
+        }
+        if (!empty($time[2])) {
+            $this->second = (int)$time[2];
+        }
+        return $this;
+    }
+
+    private function parseDate($date)
+    {
+        $date = explode('.', $date);
+        $countDate = count($date);
+        if ($countDate === 3) {
+            if (!empty($date[0])) {
+                $this->day = (int)$date[0];
+            }
+            if (!empty($date[0])) {
+                $this->month = (int)$date[1];
+            }
+            if (!empty($date[0])) {
+                $this->year = (int)$date[2];
+            }
+        } elseif ($countDate === 2) {
+            if (strlen($date[1]) === 4) {
+                if (!empty($date[0])) {
+                    $this->month = (int)$date[0];
+                }
+                if (!empty($date[0])) {
+                    $this->year = (int)$date[1];
+                }
+            } else {
+                if (!empty($date[0])) {
+                    $this->day = (int)$date[0];
+                }
+                if (!empty($date[0])) {
+                    $this->month = (int)$date[1];
+                }
+            }
+        } else {
+            if (!empty($date[0])) {
+                if (strlen($date[1]) === 4) {
+                    $this->year = (int)$date[0];
+                } else {
+                    $this->day = (int)$date[0];
+                }
+            }
+        }
         return $this;
     }
 
@@ -94,18 +163,18 @@ class WDate
     /**
      * @return int|null
      */
-    public function getDate(): ?int
+    public function getDay(): ?int
     {
-        return $this->date;
+        return $this->day;
     }
 
     /**
-     * @param int|null $date
+     * @param int|null $day
      * @return \App\WDate
      */
-    public function setDate(?int $date): self
+    public function setDay(?int $day): self
     {
-        $this->date = $date;
+        $this->day = $day;
         return $this;
     }
 
@@ -217,11 +286,11 @@ class WDate
             $result .= ':';
             $result .= $this->addZero($this->second);
         }
-        if (!is_null($this->date)) {
+        if (!is_null($this->day)) {
             if (!empty($result)) {
                 $result .= ' ';
             }
-            $result .= $this->addZero($this->date);
+            $result .= $this->addZero($this->day);
         }
         if (!is_null($this->month)) {
             if (!empty($result)) {
@@ -266,7 +335,7 @@ class WDate
         if ($result !== 0) {
             return $result;
         }
-        $result = $this->diffInt($this->date, $diff->getDate());
+        $result = $this->diffInt($this->day, $diff->getDay());
         if ($result !== 0) {
             return $result;
         }
