@@ -67,58 +67,86 @@ class WDate
     }
 
     /**
-     * Парсинг времени
-     * @param string $time строка со временем
+     * Парсинг даты
+     * @param string $date
      * @return $this
+     * @throws \App\WDateException
      */
-    private function parseTime($time)
-    {
-        $time = explode(':', $time);
-        if (!empty($time[0])) {
-            $this->hour = (int)$time[0];
-        }
-        if (!empty($time[1])) {
-            $this->minute = (int)$time[1];
-        }
-        if (!empty($time[2])) {
-            $this->second = (int)$time[2];
-        }
-        return $this;
-    }
-
     private function parseDate($date)
     {
         $date = explode('.', $date);
         $countDate = count($date);
         if ($countDate === 3) {
-            if (!empty($date[0])) {
-                $this->day = (int)$date[0];
-            }
-            if (!empty($date[0])) {
+            if (!empty($date[1])) {
+                if ((int)$date[1] > 12) {
+                    throw new WDateException('Месяц не может быть больше 12');
+                }
                 $this->month = (int)$date[1];
             }
-            if (!empty($date[0])) {
+            if (!empty($date[2])) {
                 $this->year = (int)$date[2];
             }
+            if (!empty($date[0])) {
+                switch ($this->month) {
+                    case 1:
+                    case 3:
+                    case 5:
+                    case 7:
+                    case 8:
+                    case 10:
+                    case 12:
+                    default:
+                        if ((int)$date[0] > 31) {
+                            throw new WDateException("Дней в {$this->month} месяце не может быть больше 31");
+                        }
+                        break;
+                    case 2:
+                        if (!$this->year) {
+                            if ((int)$date[0] > 29) {
+                                throw new WDateException("Дней в феврале не может быть больше 29");
+                            }
+                        } else {
+                            if ($this->year % 4 === 0) {
+                                if ((int)$date[0] > 29) {
+                                    throw new WDateException("Дней в феврале,{$this->year} не может быть больше 29");
+                                }
+                            } else {
+                                if ((int)$date[0] > 28) {
+                                    throw new WDateException("Дней в феврале,{$this->year} не может быть больше 28");
+                                }
+                            }
+                        }
+                        break;
+                    case 4:
+                    case 6:
+                    case 9:
+                    case 11:
+                        if ((int)$date[0] > 30) {
+                            throw new WDateException("Дней в {$this->month} месяце не может быть больше 30");
+                        }
+                        break;
+                }
+                $this->day = (int)$date[0];
+            }
         } elseif ($countDate === 2) {
-            if (strlen($date[1]) === 4) {
+            if (strlen($date[1]) > 2) {
                 if (!empty($date[0])) {
                     $this->month = (int)$date[0];
                 }
-                if (!empty($date[0])) {
+                if (!empty($date[1])) {
                     $this->year = (int)$date[1];
                 }
             } else {
                 if (!empty($date[0])) {
                     $this->day = (int)$date[0];
                 }
-                if (!empty($date[0])) {
+                if (!empty($date[1])) {
                     $this->month = (int)$date[1];
                 }
             }
         } else {
             if (!empty($date[0])) {
-                if (strlen($date[1]) === 4) {
+                if (strlen($date[1]) > 2) {
                     $this->year = (int)$date[0];
                 } else {
                     $this->day = (int)$date[0];
@@ -129,142 +157,32 @@ class WDate
     }
 
     /**
-     * @param string $code - код который вытаскиваем. H - час, I - минута, S - секунда, D - день, M - месяц, Y - год
-     * @param string $date - текущая дата
-     * @param array $format формат разбитый на массив
-     * @return null|int
+     * Парсинг времени
+     * @param string $time строка со временем
+     * @return $this
+     * @throws \App\WDateException
      */
-    private function parseValue($code, $date, array $format)
+    private function parseTime($time)
     {
-        $pos = null;
-        $count = null;
-        for ($i = 0, $l = count($format); $i < $l; $i++) {
-            if ($format[$i] === $code) {
-                if (is_null($pos)) {
-                    $pos = $i;
-                }
-                $count++;
-            } else {
-                if (!is_null($pos)) {
-                    break;
-                }
+        $time = explode(':', $time);
+        if (!empty($time[0])) {
+            if ((int)$time[0] > 23) {
+                throw new WDateException('Часов не может быть больше 23');
             }
+            $this->hour = (int)$time[0];
         }
-        if (is_null($pos)) {
-            return null;
+        if (!empty($time[1])) {
+            if ((int)$time[1] > 59) {
+                throw new WDateException('Минут не может быть больше 59');
+            }
+            $this->minute = (int)$time[1];
         }
-        $result = substr($date, $pos, $count);
-        if ($result === false) {
-            return null;
+        if (!empty($time[2])) {
+            if ((int)$time[2] > 59) {
+                throw new WDateException('Секунд не может быть больше 59');
+            }
+            $this->second = (int)$time[2];
         }
-        return (int)$result;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getDay(): ?int
-    {
-        return $this->day;
-    }
-
-    /**
-     * @param int|null $day
-     * @return \App\WDate
-     */
-    public function setDay(?int $day): self
-    {
-        $this->day = $day;
-        return $this;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getMonth(): ?int
-    {
-        return $this->month;
-    }
-
-    /**
-     * @param int|null $month
-     * @return \App\WDate
-     */
-    public function setMonth(?int $month): self
-    {
-        $this->month = $month;
-        return $this;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getYear(): ?int
-    {
-        return $this->year;
-    }
-
-    /**
-     * @param int|null $year
-     * @return \App\WDate
-     */
-    public function setYear(?int $year): self
-    {
-        $this->year = $year;
-        return $this;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getHour(): ?int
-    {
-        return $this->hour;
-    }
-
-    /**
-     * @param int|null $hour
-     * @return \App\WDate
-     */
-    public function setHour(?int $hour): self
-    {
-        $this->hour = $hour;
-        return $this;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getMinute(): ?int
-    {
-        return $this->minute;
-    }
-
-    /**
-     * @param int|null $minute
-     * @return \App\WDate
-     */
-    public function setMinute(?int $minute): self
-    {
-        $this->minute = $minute;
-        return $this;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getSecond(): ?int
-    {
-        return $this->second;
-    }
-
-    /**
-     * @param int|null $second
-     * @return \App\WDate
-     */
-    public function setSecond(?int $second): self
-    {
-        $this->second = $second;
         return $this;
     }
 
@@ -365,5 +283,145 @@ class WDate
             }
         }
         return 0;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getYear()
+    {
+        return $this->year;
+    }
+
+    /**
+     * @param int|null $year
+     * @return \App\WDate
+     */
+    public function setYear($year)
+    {
+        $this->year = $year;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getMonth()
+    {
+        return $this->month;
+    }
+
+    /**
+     * @param int|null $month
+     * @return \App\WDate
+     */
+    public function setMonth($month)
+    {
+        $this->month = $month;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getDay()
+    {
+        return $this->day;
+    }
+
+    /**
+     * @param int|null $day
+     * @return \App\WDate
+     */
+    public function setDay($day)
+    {
+        $this->day = $day;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getHour()
+    {
+        return $this->hour;
+    }
+
+    /**
+     * @param int|null $hour
+     * @return \App\WDate
+     */
+    public function setHour($hour)
+    {
+        $this->hour = $hour;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getMinute()
+    {
+        return $this->minute;
+    }
+
+    /**
+     * @param int|null $minute
+     * @return \App\WDate
+     */
+    public function setMinute($minute)
+    {
+        $this->minute = $minute;
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getSecond()
+    {
+        return $this->second;
+    }
+
+    /**
+     * @param int|null $second
+     * @return \App\WDate
+     */
+    public function setSecond($second): self
+    {
+        $this->second = $second;
+        return $this;
+    }
+
+    /**
+     * @param string $code - код который вытаскиваем. H - час, I - минута, S - секунда, D - день, M - месяц, Y - год
+     * @param string $date - текущая дата
+     * @param array $format формат разбитый на массив
+     * @return null|int
+     */
+    private function parseValue($code, $date, array $format)
+    {
+        $pos = null;
+        $count = null;
+        for ($i = 0, $l = count($format); $i < $l; $i++) {
+            if ($format[$i] === $code) {
+                if (is_null($pos)) {
+                    $pos = $i;
+                }
+                $count++;
+            } else {
+                if (!is_null($pos)) {
+                    break;
+                }
+            }
+        }
+        if (is_null($pos)) {
+            return null;
+        }
+        $result = substr($date, $pos, $count);
+        if ($result === false) {
+            return null;
+        }
+        return (int)$result;
     }
 }

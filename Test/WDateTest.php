@@ -22,7 +22,7 @@ class WDateTest extends PHPUnit\Framework\TestCase
             '01:05:17',
         ];
         foreach ($arTest as $item) {
-            $date = new \App\WDate($item);
+            $date = new App\WDate($item);
             $this->assertEquals($date->format(), $item, $item);
         }
     }
@@ -64,7 +64,7 @@ class WDateTest extends PHPUnit\Framework\TestCase
         foreach ($arTest as $date => $dates) {
             $date = new App\WDate($date);
             foreach ($dates as $key => $value) {
-                $diff = new \App\WDate($key);
+                $diff = new App\WDate($key);
                 $this->assertEquals($date->diff($diff), $value, $diff->format() . ' ' . $date->format());
             }
         }
