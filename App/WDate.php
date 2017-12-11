@@ -273,7 +273,9 @@ class WDate
      * Сравнение чисел для сравнения даты
      * @param int|null $current
      * @param int|null $diff
-     * @return int
+     * @return int  -1  поданая дата больше текущей
+     *              1   текущая дата больше поданой
+     *              0   даты равны
      */
     private function diffInt($current, $diff)
     {
@@ -387,41 +389,9 @@ class WDate
      * @param int|null $second
      * @return \App\WDate
      */
-    public function setSecond($second): self
+    public function setSecond($second)
     {
         $this->second = $second;
         return $this;
-    }
-
-    /**
-     * @param string $code - код который вытаскиваем. H - час, I - минута, S - секунда, D - день, M - месяц, Y - год
-     * @param string $date - текущая дата
-     * @param array $format формат разбитый на массив
-     * @return null|int
-     */
-    private function parseValue($code, $date, array $format)
-    {
-        $pos = null;
-        $count = null;
-        for ($i = 0, $l = count($format); $i < $l; $i++) {
-            if ($format[$i] === $code) {
-                if (is_null($pos)) {
-                    $pos = $i;
-                }
-                $count++;
-            } else {
-                if (!is_null($pos)) {
-                    break;
-                }
-            }
-        }
-        if (is_null($pos)) {
-            return null;
-        }
-        $result = substr($date, $pos, $count);
-        if ($result === false) {
-            return null;
-        }
-        return (int)$result;
     }
 }
