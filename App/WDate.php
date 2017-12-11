@@ -77,79 +77,23 @@ class WDate
         $date = explode('.', $date);
         $countDate = count($date);
         if ($countDate === 3) {
-            if (!empty($date[1])) {
-                if ((int)$date[1] > 12) {
-                    throw new WDateException('Месяц не может быть больше 12');
-                }
-                $this->month = (int)$date[1];
-            }
-            if (!empty($date[2])) {
-                $this->year = (int)$date[2];
-            }
-            if (!empty($date[0])) {
-                switch ($this->month) {
-                    case 1:
-                    case 3:
-                    case 5:
-                    case 7:
-                    case 8:
-                    case 10:
-                    case 12:
-                    default:
-                        if ((int)$date[0] > 31) {
-                            throw new WDateException("Дней в {$this->month} месяце не может быть больше 31");
-                        }
-                        break;
-                    case 2:
-                        if (!$this->year) {
-                            if ((int)$date[0] > 29) {
-                                throw new WDateException("Дней в феврале не может быть больше 29");
-                            }
-                        } else {
-                            if ($this->year % 4 === 0) {
-                                if ((int)$date[0] > 29) {
-                                    throw new WDateException("Дней в феврале,{$this->year} не может быть больше 29");
-                                }
-                            } else {
-                                if ((int)$date[0] > 28) {
-                                    throw new WDateException("Дней в феврале,{$this->year} не может быть больше 28");
-                                }
-                            }
-                        }
-                        break;
-                    case 4:
-                    case 6:
-                    case 9:
-                    case 11:
-                        if ((int)$date[0] > 30) {
-                            throw new WDateException("Дней в {$this->month} месяце не может быть больше 30");
-                        }
-                        break;
-                }
-                $this->day = (int)$date[0];
-            }
+            $this->setYear($date[2])
+                ->setMonth($date[1])
+                ->setDay($date[0]);
         } elseif ($countDate === 2) {
             if (strlen($date[1]) > 2) {
-                if (!empty($date[0])) {
-                    $this->month = (int)$date[0];
-                }
-                if (!empty($date[1])) {
-                    $this->year = (int)$date[1];
-                }
+                $this->setYear($date[1])
+                    ->setMonth($date[0]);
             } else {
-                if (!empty($date[0])) {
-                    $this->day = (int)$date[0];
-                }
-                if (!empty($date[1])) {
-                    $this->month = (int)$date[1];
-                }
+                $this->setDay($date[0])
+                    ->setMonth($date[1]);
             }
         } else {
             if (!empty($date[0])) {
-                if (strlen($date[1]) > 2) {
-                    $this->year = (int)$date[0];
+                if (strlen($date[0]) > 2) {
+                    $this->setYear($date[0]);
                 } else {
-                    $this->day = (int)$date[0];
+                    $this->setDay($date[0]);
                 }
             }
         }
@@ -165,24 +109,9 @@ class WDate
     private function parseTime($time)
     {
         $time = explode(':', $time);
-        if (!empty($time[0])) {
-            if ((int)$time[0] > 23) {
-                throw new WDateException('Часов не может быть больше 23');
-            }
-            $this->hour = (int)$time[0];
-        }
-        if (!empty($time[1])) {
-            if ((int)$time[1] > 59) {
-                throw new WDateException('Минут не может быть больше 59');
-            }
-            $this->minute = (int)$time[1];
-        }
-        if (!empty($time[2])) {
-            if ((int)$time[2] > 59) {
-                throw new WDateException('Секунд не может быть больше 59');
-            }
-            $this->second = (int)$time[2];
-        }
+        $this->setHour($time[0])
+            ->setMinute($time[1])
+            ->setSecond($time[2]);
         return $this;
     }
 
@@ -298,9 +227,22 @@ class WDate
     /**
      * @param int|null $year
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setYear($year)
     {
+        if (empty($year)) {
+            $year = null;
+        }
+        if (!is_null($year)) {
+            $year = (int)$year;
+            if ($year < 0) {
+                throw new WDateException('Год не может быть отрицательным');
+            }
+            if (!is_null($this->day)) {
+                $this->checkDay($this->day);
+            }
+        }
         $this->year = $year;
         return $this;
     }
@@ -316,9 +258,25 @@ class WDate
     /**
      * @param int|null $month
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setMonth($month)
     {
+        if (empty($month)) {
+            $month = null;
+        }
+        if (!is_null($month)) {
+            $month = (int)$month;
+            if ($month <= 0) {
+                throw new WDateException('Месяц не может быть отрицательным и равным нулю');
+            }
+            if ($month > 12) {
+                throw new WDateException('Месяц не может быть больше 12');
+            }
+            if (!is_null($this->day)) {
+                $this->checkDay($this->day);
+            }
+        }
         $this->month = $month;
         return $this;
     }
@@ -332,11 +290,70 @@ class WDate
     }
 
     /**
+     * Проверка дня месяца
+     * @param int $day
+     * @throws \App\WDateException
+     */
+    private function checkDay($day)
+    {
+        switch ($this->month) {
+            case 1:
+            case 3:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 12:
+            default:
+                if ($day > 31) {
+                    throw new WDateException("Дней в {$this->month} месяце не может быть больше 31");
+                }
+                break;
+            case 2:
+                if (!$this->year) {
+                    if ($day > 29) {
+                        throw new WDateException("Дней в феврале не может быть больше 29");
+                    }
+                } else {
+                    if ($this->year % 4 === 0) {
+                        if ($day > 29) {
+                            throw new WDateException("Дней в феврале,{$this->year} не может быть больше 29");
+                        }
+                    } else {
+                        if ($day > 28) {
+                            throw new WDateException("Дней в феврале,{$this->year} не может быть больше 28");
+                        }
+                    }
+                }
+                break;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                if ($day > 30) {
+                    throw new WDateException("Дней в {$this->month} месяце не может быть больше 30");
+                }
+                break;
+        }
+    }
+
+    /**
      * @param int|null $day
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setDay($day)
     {
+        if (empty($day)) {
+            $day = null;
+        }
+        if (!is_null($day)) {
+            $day = (int)$day;
+            if ($day <= 0) {
+                throw new WDateException('День не может быть отрицательным и равным нулю');
+            }
+            $this->checkDay($day);
+        }
         $this->day = $day;
         return $this;
     }
@@ -352,9 +369,22 @@ class WDate
     /**
      * @param int|null $hour
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setHour($hour)
     {
+        if (empty($hour)) {
+            $hour = null;
+        }
+        if (!is_null($hour)) {
+            $hour = (int)$hour;
+            if ($hour < 0) {
+                throw new WDateException('Час не может быть отрицательным');
+            }
+            if ($hour > 23) {
+                throw new WDateException('Часов не может быть больше 23');
+            }
+        }
         $this->hour = $hour;
         return $this;
     }
@@ -370,9 +400,22 @@ class WDate
     /**
      * @param int|null $minute
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setMinute($minute)
     {
+        if (empty($minute)) {
+            $minute = null;
+        }
+        if (!is_null($minute)) {
+            $minute = (int)$minute;
+            if ($minute < 0) {
+                throw new WDateException('Минута не может быть отрицательной');
+            }
+            if ($minute > 59) {
+                throw new WDateException('Минута не может быть больше 59');
+            }
+        }
         $this->minute = $minute;
         return $this;
     }
@@ -388,9 +431,22 @@ class WDate
     /**
      * @param int|null $second
      * @return \App\WDate
+     * @throws \App\WDateException
      */
     public function setSecond($second)
     {
+        if (empty($second)) {
+            $second = null;
+        }
+        if (!is_null($second)) {
+            $second = (int)$second;
+            if ($second < 0) {
+                throw new WDateException('Секунда не может быть отрицательной');
+            }
+            if ($second > 59) {
+                throw new WDateException('Секунда не может быть больше 59');
+            }
+        }
         $this->second = $second;
         return $this;
     }
